@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal, Box, Typography } from '@mui/material';
+import { Modal, Box, Typography, Button } from '@mui/material';
 import { isBrowser, isMobile } from 'react-device-detect';
 import './App.css';
 
@@ -9,43 +9,46 @@ function App() {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: 400,
     bgcolor: 'background.paper',
     border: '2px solid #000',
     boxShadow: 24,
     p: 4,
-  };
+  }
+  const [open, setOpen] = useState(false)
+  const [view, setView] = useState('grid')
   const [pokemon, setPokemon] = useState({sprites: {front_default: ''},species: {name: ''}})
-  const [isLoading, setIsLoading] = useState(true)
-  const [limit, setLimit] = useState('20')
-  const [open, setOpen] = useState(false);
-  const handleClose = () => setOpen(false);
-  const [pagination, setPagination] = useState({
-    current: 'https://pokeapi.co/api/v2/pokemon?offset=0&limit'+ '=' +{limit},
-    next: null,
-    previous: null
-  })
-  let [lista, setLista] = useState([])
-  function fetchList () {
-      fetch(pagination.current)
+  const [offset, setOffset] = useState(0)
+  const [limit, setLimit] = useState(20)
+  const [page, setPage] = useState('https://pokeapi.co/api/v2/pokemon?offset='+offset.toString()+'&limit='+limit.toString())
+  const [nextPage, setNextPage] = useState(null)
+  const [prevPage, setPrevPage] = useState(null)
+  const [list, setList] = useState([])
+  const handleClose = () => setOpen(false)
+  const fetchList = () => {
+      fetch(page)
         .then(async response => {
           const data = await response.json();
           if (data.next) {
-            pagination.next = data.next.split('=').slice(0,2).join('=')
+            setNextPage(data.next)
           } else {
-            pagination.next = null
+            setNextPage(null)
           }
           if (data.previous) {
-            pagination.previous = data.previous.split('=').slice(0,2).join('=')
+            setPrevPage(data.previous)
           } else {
-            pagination.previous = null
+            setPrevPage(null)
           }
-          let array = []
-          for (let pokemon in data.results) {
-            array.push(<li onClick={ function() {fetchPokemonInfo(data.results[pokemon].url)} } key={data.results[pokemon].name}>{data.results[pokemon].name}</li>)
-          }
-          setLista(array)
+          populateList(data)
         })
+  }
+  function populateList (data) {
+    let array = []
+    for (let i in data.results) {
+      array.push(<li onClick={ function() {fetchPokemonInfo(data.results[i].url)} } key={data.results[i].name}>
+        {parseInt(offset) + parseInt(i) + 1}.{data.results[i].name}
+      </li>)
+    }
+    setList(array)
   }
   function fetchPokemonInfo (pokemon_url) {
     fetch(pokemon_url)
@@ -56,21 +59,21 @@ function App() {
     setOpen(true)
   }
   function changePage (direction) {
-    setIsLoading(true)
     if (direction === "next") {
-      pagination.current = pagination.next
-      fetchList()
+      setOffset(parseInt(nextPage.split('=')[1]))
     } else if (direction === "previous") {
-      pagination.current = pagination.previous
-      fetchList()
+      setOffset(parseInt(prevPage.split('=')[1]))
     }
   }
+  function changeView (view) {
+    setView(view)
+  }
   useEffect(() => {
-    const fetchData = async () => {
-      fetchList()
-    }
-    fetchData()
-  }, [] )
+    fetchList()
+  }, [page] )
+  useEffect(() => {
+    setPage('https://pokeapi.co/api/v2/pokemon?offset='+offset.toString()+'&limit='+limit.toString())
+  }, [offset] )
   return (
     <div className="App">
       <header className="App-header">
@@ -87,11 +90,29 @@ function App() {
             <img src={pokemon.sprites.front_default}></img>
           </Box>
         </Modal>
-        <ul>
-          {lista}
+        <div className="viewSelector">
+          <span>Select view type</span>
+          <span>
+            <Button disabled={view==='list'} onClick={ function () {changeView('list')}}>
+              List
+            </Button>
+            <Button disabled={view==='grid'} onClick={ function () {changeView('grid')}}>
+              Grid
+            </Button>
+          </span>
+        </div>
+        <ul className={view}>
+          {list}
         </ul>
-        <button disabled={!pagination.next} onClick={ function() {changePage('next')}}>Next</button>
-        <button disabled={!pagination.previous} onClick={ function() {changePage('previous')}}>Previous</button>
+        Showing from {offset + 1} to {offset+limit}
+        <div className="navButtons">
+            <Button disabled={!prevPage} onClick={ function() {changePage('previous')}}>
+              Prev
+            </Button>
+            <Button disabled={!nextPage} onClick={ function() {changePage('next')}}>
+              Next
+            </Button>
+        </div>
       </header>
     </div>
   );
