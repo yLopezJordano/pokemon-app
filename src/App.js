@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Modal, Box, Typography, Button } from '@mui/material';
-import { isBrowser, isMobile } from 'react-device-detect';
+import LoadingSpinner from "./loadingSpinner/loadingSpinner";
 import './App.css';
 
 function App() {
@@ -14,6 +15,21 @@ function App() {
     boxShadow: 24,
     p: 4,
   }
+  
+  const theme = createTheme({
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            "&.Mui-disabled": {
+              color: "white"
+            }
+          }
+        }
+      }
+    }
+  });
+  const [isLoading, setLoadoing] = useState(false)
   const [open, setOpen] = useState(false)
   const [view, setView] = useState('grid')
   const [pokemon, setPokemon] = useState({sprites: {front_default: ''},species: {name: ''}})
@@ -25,6 +41,7 @@ function App() {
   const [list, setList] = useState([])
   const handleClose = () => setOpen(false)
   const fetchList = () => {
+      setLoadoing(true)
       fetch(page)
         .then(async response => {
           const data = await response.json();
@@ -39,6 +56,10 @@ function App() {
             setPrevPage(null)
           }
           populateList(data)
+          setLoadoing(false)
+        }).catch(() => {
+          console.log('Error getting the pokemon list')
+          setLoadoing(false)
         })
   }
   function populateList (data) {
@@ -51,12 +72,17 @@ function App() {
     setList(array)
   }
   function fetchPokemonInfo (pokemon_url) {
+    setLoadoing(true)
     fetch(pokemon_url)
       .then(async response => {
         const pokemon = await response.json();
         setPokemon(pokemon)
+        setLoadoing(false)
+        setOpen(true)
+      }).catch(() => {
+        console.log('Error getting the pokemon info')
+        setLoadoing(false)
       })
-    setOpen(true)
   }
   function changePage (direction) {
     if (direction === "next") {
@@ -77,42 +103,47 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <Modal
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
-        >
-          <Box sx={style}>
-            <Typography id="modal-modal-title" variant="h6" component="h2">
-              {pokemon.species.name}
-            </Typography>
-            <img src={pokemon.sprites.front_default}></img>
-          </Box>
-        </Modal>
-        <div className="viewSelector">
-          <span>Select view type</span>
-          <span>
-            <Button disabled={view==='list'} onClick={ function () {changeView('list')}}>
-              List
-            </Button>
-            <Button disabled={view==='grid'} onClick={ function () {changeView('grid')}}>
-              Grid
-            </Button>
-          </span>
-        </div>
-        <ul className={view}>
-          {list}
-        </ul>
-        Showing from {offset + 1} to {offset+limit}
-        <div className="navButtons">
-            <Button disabled={!prevPage} onClick={ function() {changePage('previous')}}>
-              Prev
-            </Button>
-            <Button disabled={!nextPage} onClick={ function() {changePage('next')}}>
-              Next
-            </Button>
-        </div>
+        { isLoading ?
+        <LoadingSpinner/> :
+        <ThemeProvider theme={theme}>
+          <Modal
+          open={open}
+          onClose={handleClose}
+          aria-labelledby="modal-modal-title"
+          aria-describedby="modal-modal-description"
+          >
+            <Box sx={style}>
+              <Typography id="modal-modal-title" variant="h6" component="h2">
+                {pokemon.species.name}
+              </Typography>
+              <img src={pokemon.sprites.front_default}></img>
+            </Box>
+          </Modal>
+          <div className="viewSelector">
+            <span>Select view type</span>
+            <span>
+                <Button disabled={view==='list'} onClick={ function () {changeView('list')}}>
+                  List
+                </Button>
+                <Button disabled={view==='grid'} onClick={ function () {changeView('grid')}}>
+                  Grid
+                </Button>
+            </span>
+          </div>
+          <ul className={view}>
+            {list}
+          </ul>
+          Showing from {offset + 1} to {offset+limit}
+          <div className="navButtons">
+              <Button disabled={!prevPage} onClick={ function() {changePage('previous')}}>
+                Prev
+              </Button>
+              <Button disabled={!nextPage} onClick={ function() {changePage('next')}}>
+                Next
+              </Button>
+          </div>
+        </ThemeProvider>
+        }
       </header>
     </div>
   );
