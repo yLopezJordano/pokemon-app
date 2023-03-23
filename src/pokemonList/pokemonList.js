@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../loadingSpinner/loadingSpinner';
 import { Button } from '@mui/material';
+import {
+  useRecoilState,
+} from 'recoil';
+
+import { currentView, currentPage } from '../atoms';
 
 import './pokemonList.css'
 
@@ -22,10 +27,10 @@ function PokemonList() {
       }
     });
     const navigate = useNavigate()
-    const [view, setView] = useState('grid')
-    const [offset, setOffset] = useState(0)
-    const [limit, setLimit] = useState(20)
-    const [page, setPage] = useState('https://pokeapi.co/api/v2/pokemon?offset='+offset.toString()+'&limit='+limit.toString())
+    const [view, setView] = useRecoilState(currentView)
+    const [offset, setOffset] = useRecoilState(currentPage)
+    const [limit] = useState(20)
+    const [page, setPage] = useState('https://pokeapi.co/api/v2/pokemon?offset=0&limit=20')
     const [nextPage, setNextPage] = useState(null)
     const [prevPage, setPrevPage] = useState(null)
     const [list, setList] = useState([])
@@ -77,36 +82,36 @@ function PokemonList() {
       setPage('https://pokeapi.co/api/v2/pokemon?offset='+offset.toString()+'&limit='+limit.toString())
     }, [offset] )
     return (
-        <div>
-            { isLoading ?
-            <LoadingSpinner/> :
-            <ThemeProvider theme={theme}>
-                <div className="viewSelector">
-                    <span>Select view type</span>
-                    <span>
-                        <Button disabled={view==='list'} onClick={ function () {changeView('list')}}>
-                        List
-                        </Button>
-                        <Button disabled={view==='grid'} onClick={ function () {changeView('grid')}}>
-                        Grid
-                        </Button>
-                    </span>
-                </div>
-                <ul className={view}>
-                    {list}
-                </ul>
-                Showing from {offset + 1} to {offset+limit}
-                <div className="navButtons">
-                    <Button disabled={!prevPage} onClick={ function() {changePage('previous')}}>
-                        Prev
-                    </Button>
-                    <Button disabled={!nextPage} onClick={ function() {changePage('next')}}>
-                        Next
-                    </Button>
-                </div>
-            </ThemeProvider>
-            }
-        </div>
+          <div>
+              { isLoading ?
+              <LoadingSpinner/> :
+              <ThemeProvider theme={theme}>
+                  <div className="viewSelector">
+                      <span>Select view type</span>
+                      <span>
+                          <Button disabled={view==='list'} onClick={ function () {changeView('list')}}>
+                          List
+                          </Button>
+                          <Button disabled={view==='grid'} onClick={ function () {changeView('grid')}}>
+                          Grid
+                          </Button>
+                      </span>
+                  </div>
+                  <ul className={view}>
+                      {list}
+                  </ul>
+                  Showing from {offset + 1} to {offset+limit}
+                  <div className="navButtons">
+                      <Button disabled={!prevPage} onClick={ function() {changePage('previous')}}>
+                          Prev
+                      </Button>
+                      <Button disabled={!nextPage} onClick={ function() {changePage('next')}}>
+                          Next
+                      </Button>
+                  </div>
+              </ThemeProvider>
+              }
+          </div>
     )
 }
 
