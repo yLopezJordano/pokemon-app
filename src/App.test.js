@@ -1,5 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
+import { MemoryRouter } from 'react-router-dom';
+import { RecoilRoot } from 'recoil';
 
 describe('App component', () => {
   test('changes page when nav button is clicked', async () => {
@@ -13,7 +15,10 @@ describe('App component', () => {
           }),
       })
     );
-    render(<App />);
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>);
     const nextButton = await screen.findByRole('button', { name: /next/i });
     fireEvent.click(nextButton);
     expect(global.fetch).toHaveBeenCalledTimes(2);
@@ -34,7 +39,10 @@ describe('App component', () => {
           }),
       })
     );
-    render(<App />);
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>);
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledWith('https://pokeapi.co/api/v2/pokemon?offset=0&limit=20');
   });
